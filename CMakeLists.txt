@@ -2063,6 +2063,8 @@ set(EXPECTED_DATA
   touch_controls.json
   wordlist.txt
   # tidy-alphabetical-end
+
+  sclient/logo.png
 )
 
 set_glob(DATA GLOB_RECURSE "cfg;frag;json;map;otf;png;rules;ttc;ttf;txt;vert;wv" data ${EXPECTED_DATA})

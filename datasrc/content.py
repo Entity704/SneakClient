@@ -276,6 +276,8 @@ container.images.Add(image_hud)
 container.images.Add(image_extras)
 container.images.Add(Image("raceflag", "race_flag.png"))
 
+container.images.Add(Image("sclient_banner", "sclient/logo.png"))
+
 container.pickups.Add(Pickup("health"))
 container.pickups.Add(Pickup("armor"))
 container.pickups.Add(Pickup("armor_shotgun"))
