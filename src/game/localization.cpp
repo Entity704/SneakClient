@@ -198,64 +198,89 @@ bool CLocalizationDatabase::Load(const char *pFilename, IStorage *pStorage, ICon
 	m_vStrings.clear();
 	m_StringsHeap.Reset();
 
-	std::string Context;
-	std::string Origin;
-	std::string Replacement;
-	int Line = 0;
-	while(const char *pLine = LineReader.Get())
-	{
-		Line++;
-		if(pLine[0] == '\0')
-			continue;
-
-		if(pLine[0] == '#') // skip comments
-			continue;
-
-		if(pLine[0] == '[') // context
+	const auto &&LoadStrings = [this](CLineReader &Reader, bool Override) {
+		std::string Context;
+		std::string Origin;
+		std::string Replacement;
+		int Line = 0;
+		while(const char *pLine = Reader.Get())
 		{
-			const size_t Len = str_length(pLine);
-			if(Len <= 2 || pLine[Len - 1] != ']')
-			{
-				log_error("localization", "malformed context '%s' on line %d", pLine, Line);
+			Line++;
+			if(pLine[0] == '\0')
 				continue;
-			}
-			Context = pLine + 1;
-			Context.erase(Len - 2); // remove ']'
-			pLine = LineReader.Get();
-			if(!pLine)
+
+			if(pLine[0] == '#') // skip comments
+				continue;
+
+			if(pLine[0] == '[') // context
 			{
-				log_error("localization", "unexpected end of file after context line '%s' on line %d", Context.c_str(), Line);
+				const size_t Len = str_length(pLine);
+				if(Len <= 2 || pLine[Len - 1] != ']')
+				{
+					log_error("localization", "malformed context '%s' on line %d", pLine, Line);
+					continue;
+				}
+				Context = pLine + 1;
+				Context.erase(Len - 2); // remove ']'
+				pLine = Reader.Get();
+				if(!pLine)
+				{
+					log_error("localization", "unexpected end of file after context line '%s' on line %d", Context.c_str(), Line);
+					break;
+				}
+				Line++;
+			}
+			else
+			{
+				Context = "";
+			}
+
+			Origin = pLine;
+			str_unescape_newlines(Origin.data());
+
+			const char *pReplacement = Reader.Get();
+			if(!pReplacement)
+			{
+				log_error("localization", "unexpected end of file after original '%s' on line %d", Origin.c_str(), Line);
 				break;
 			}
 			Line++;
+
+			if(pReplacement[0] != '=' || pReplacement[1] != '=' || pReplacement[2] != ' ')
+			{
+				log_error("localization", "malformed replacement '%s' for original '%s' on line %d", pReplacement, Origin.c_str(), Line);
+				continue;
+			}
+
+			Replacement = pReplacement + 3;
+			str_unescape_newlines(Replacement.data());
+
+			if(Override)
+			{
+				// a duplicate entry would break the lookup in FindString, so replace it instead
+				const unsigned Hash = str_quickhash(Origin.c_str());
+				const unsigned ContextHash = str_quickhash(Context.c_str());
+				std::erase_if(m_vStrings, [Hash, ContextHash](const CString &String) {
+					return String.m_Hash == Hash && String.m_ContextHash == ContextHash;
+				});
+			}
+
+			AddString(Origin.c_str(), Replacement.c_str(), Context.c_str());
 		}
-		else
-		{
-			Context = "";
-		}
+	};
 
-		Origin = pLine;
-		str_unescape_newlines(Origin.data());
+	LoadStrings(LineReader, false);
 
-		const char *pReplacement = LineReader.Get();
-		if(!pReplacement)
-		{
-			log_error("localization", "unexpected end of file after original '%s' on line %d", Origin.c_str(), Line);
-			break;
-		}
-		Line++;
-
-		if(pReplacement[0] != '=' || pReplacement[1] != '=' || pReplacement[2] != ' ')
-		{
-			log_error("localization", "malformed replacement '%s' for original '%s' on line %d", pReplacement, Origin.c_str(), Line);
-			continue;
-		}
-
-		Replacement = pReplacement + 3;
-		str_unescape_newlines(Replacement.data());
-
-		AddString(Origin.c_str(), Replacement.c_str(), Context.c_str());
+	// append SneakClient's language files
+	char aSClientFilename[IO_MAX_PATH_LENGTH];
+	str_format(aSClientFilename, sizeof(aSClientFilename), "sclient/%s", pFilename);
+	CLineReader SClientLineReader;
+	if(SClientLineReader.OpenFile(pStorage->OpenFile(aSClientFilename, IOFLAG_READ, IStorage::TYPE_ALL)))
+	{
+		log_info("localization", "loaded '%s'", aSClientFilename);
+		LoadStrings(SClientLineReader, true);
 	}
+
 	std::sort(m_vStrings.begin(), m_vStrings.end());
 	return true;
 }

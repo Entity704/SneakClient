@@ -2065,7 +2065,44 @@ set(EXPECTED_DATA
   # tidy-alphabetical-end
 
   sclient/logo.png
+  sclient/languages/arabic.txt
+  sclient/languages/azerbaijani.txt
+  sclient/languages/belarusian.txt
+  sclient/languages/bosnian.txt
+  sclient/languages/brazilian_portuguese.txt
+  sclient/languages/bulgarian.txt
+  sclient/languages/catalan.txt
+  sclient/languages/chuvash.txt
+  sclient/languages/czech.txt
+  sclient/languages/danish.txt
+  sclient/languages/dutch.txt
+  sclient/languages/esperanto.txt
+  sclient/languages/estonian.txt
+  sclient/languages/finnish.txt
+  sclient/languages/french.txt
+  sclient/languages/galician.txt
+  sclient/languages/german.txt
+  sclient/languages/greek.txt
+  sclient/languages/hungarian.txt
+  sclient/languages/italian.txt
+  sclient/languages/japanese.txt
+  sclient/languages/korean.txt
+  sclient/languages/kyrgyz.txt
+  sclient/languages/norwegian.txt
+  sclient/languages/persian.txt
+  sclient/languages/polish.txt
+  sclient/languages/portuguese.txt
+  sclient/languages/romanian.txt
+  sclient/languages/russian.txt
+  sclient/languages/serbian.txt
+  sclient/languages/serbian_cyrillic.txt
   sclient/languages/simplified_chinese.txt
+  sclient/languages/slovak.txt
+  sclient/languages/spanish.txt
+  sclient/languages/swedish.txt
+  sclient/languages/traditional_chinese.txt
+  sclient/languages/turkish.txt
+  sclient/languages/ukrainian.txt
 )
 
 set_glob(DATA GLOB_RECURSE "cfg;frag;json;map;otf;png;rules;ttc;ttf;txt;vert;wv" data ${EXPECTED_DATA})
