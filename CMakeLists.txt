@@ -2065,6 +2065,7 @@ set(EXPECTED_DATA
   # tidy-alphabetical-end
 
   sclient/logo.png
+  sclient/languages/simplified_chinese.txt
 )
 
 set_glob(DATA GLOB_RECURSE "cfg;frag;json;map;otf;png;rules;ttc;ttf;txt;vert;wv" data ${EXPECTED_DATA})
@@ -2799,6 +2800,8 @@ if(CLIENT)
     ui_scrollregion.cpp
     ui_scrollregion.h
     # tidy-alphabetical-end
+
+    components/sclient/menus_settings_sneaking.cpp
   )
   set_src(GAME_EDITOR GLOB_RECURSE src/game/editor
     # tidy-alphabetical-start

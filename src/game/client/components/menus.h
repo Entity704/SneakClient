@@ -581,6 +581,9 @@ protected:
 	// found in menus_settings_ddnet.cpp
 	void RenderSettingsDDNet(CUIRect MainView);
 
+	// found in sclient/menus_settings_sneaking.cpp
+	void RenderSettingsSneaking(CUIRect MainView);
+
 	// found in menus_settings_general.cpp
 	void RenderSettingsGeneral(CUIRect MainView);
 	void RenderThemeSelection(CUIRect MainView);
@@ -716,6 +719,7 @@ public:
 		SETTINGS_DDNET,
 		SETTINGS_ASSETS,
 		SETTINGS_CREDITS,
+		SETTINGS_SNEAKING,
 
 		SETTINGS_LENGTH,
 	};
