@@ -1,2 +1,32 @@
+Control
+== 
+
+Don't send your own typing status (no "..." bubble)
+== 
+
+Enable sneaking
+== 
+
+Hide typing status
+== 
+
+Main switch
+== 
+
+Maybe all the settings are at their default values
+== 
+
+Open SneakClient's settings file
+== 
+
+Settings file doesn't exists
+== 
+
+SneakClient's settings file
+== 
+
 Sneaking
-==
+== 
+
+Understood
+== 

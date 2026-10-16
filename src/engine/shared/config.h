@@ -17,6 +17,8 @@
 static constexpr const char *DEFAULT_SAVED_RCON_USER = "local-server";
 
 #define CONFIG_FILE "settings_ddnet.cfg"
+#define SC_CONFIG_FILE "settings_sneakclient.cfg"
+#define SC_CONFIG_PREFIX "sc_"
 #define AUTOEXEC_FILE "autoexec.cfg"
 #define AUTOEXEC_CLIENT_FILE "autoexec_client.cfg"
 #define AUTOEXEC_SERVER_FILE "autoexec_server.cfg"
@@ -244,6 +246,7 @@ class CConfigManager : public IConfigManager
 	class IStorage *m_pStorage;
 
 	IOHANDLE m_ConfigFile;
+	IOHANDLE m_ScConfigFile;
 	bool m_Failed;
 
 	struct SCallback
@@ -267,6 +270,8 @@ class CConfigManager : public IConfigManager
 	static void Con_Reset(IConsole::IResult *pResult, void *pUserData);
 	static void Con_Toggle(IConsole::IResult *pResult, void *pUserData);
 	static void Con_ToggleStroke(IConsole::IResult *pResult, void *pUserData);
+
+	void WriteLineTo(IOHANDLE File, const char *pLine);
 
 public:
 	CConfigManager();

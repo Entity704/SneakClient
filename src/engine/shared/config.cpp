@@ -22,6 +22,13 @@ static void EscapeParam(char *pDst, const char *pSrc, int Size)
 	str_escape(&pDst, pSrc, pDst + Size);
 }
 
+// Whether the config variable belongs to SneakClient and is therefore saved to
+// SC_CONFIG_FILE instead of CONFIG_FILE.
+static bool IsSneakClientConfigVariable(const SConfigVariable *pVariable)
+{
+	return str_startswith(pVariable->m_pScriptName, SC_CONFIG_PREFIX) != nullptr;
+}
+
 void SConfigVariable::ExecuteLine(const char *pLine) const
 {
 	m_pConsole->ExecuteLine(pLine, (m_Flags & CFGFLAG_GAME) != 0 ? IConsole::CLIENT_ID_GAME : IConsole::CLIENT_ID_UNSPECIFIED);
@@ -262,6 +269,7 @@ CConfigManager::CConfigManager()
 	m_pConsole = nullptr;
 	m_pStorage = nullptr;
 	m_ConfigFile = nullptr;
+	m_ScConfigFile = nullptr;
 	m_Failed = false;
 }
 
@@ -391,6 +399,10 @@ bool CConfigManager::Save()
 		return false;
 	}
 
+	char aScConfigFileTmp[IO_MAX_PATH_LENGTH];
+	bool WroteScConfigFile = false;
+	m_ScConfigFile = nullptr;
+
 	m_Failed = false;
 
 	char aLineBuf[2048];
@@ -399,7 +411,26 @@ bool CConfigManager::Save()
 		if((pVariable->m_Flags & CFGFLAG_SAVE) != 0 && !pVariable->IsDefault())
 		{
 			pVariable->Serialize(aLineBuf, sizeof(aLineBuf));
-			WriteLine(aLineBuf);
+			if(!IsSneakClientConfigVariable(pVariable))
+			{
+				WriteLineTo(m_ConfigFile, aLineBuf);
+				continue;
+			}
+
+			if(!m_ScConfigFile)
+			{
+				m_ScConfigFile = m_pStorage->OpenFile(IStorage::FormatTmpPath(aScConfigFileTmp, sizeof(aScConfigFileTmp), SC_CONFIG_FILE), IOFLAG_WRITE, IStorage::TYPE_SAVE);
+				if(!m_ScConfigFile)
+				{
+					log_error("config", "ERROR: opening %s failed", aScConfigFileTmp);
+					m_Failed = true;
+					io_close(m_ConfigFile);
+					m_ConfigFile = nullptr;
+					return false;
+				}
+				WroteScConfigFile = true;
+			}
+			WriteLineTo(m_ScConfigFile, aLineBuf);
 		}
 	}
 
@@ -410,7 +441,7 @@ bool CConfigManager::Save()
 
 	for(const char *pCommand : m_vpUnknownCommands)
 	{
-		WriteLine(pCommand);
+		WriteLineTo(m_ConfigFile, pCommand);
 	}
 
 	if(m_Failed)
@@ -432,6 +463,23 @@ bool CConfigManager::Save()
 
 	m_ConfigFile = nullptr;
 
+	if(WroteScConfigFile)
+	{
+		if(io_sync(m_ScConfigFile) != 0)
+		{
+			m_Failed = true;
+			log_error("config", "ERROR: synchronizing %s failed", aScConfigFileTmp);
+		}
+
+		if(io_close(m_ScConfigFile) != 0)
+		{
+			m_Failed = true;
+			log_error("config", "ERROR: closing %s failed", aScConfigFileTmp);
+		}
+
+		m_ScConfigFile = nullptr;
+	}
+
 	if(m_Failed)
 	{
 		return false;
@@ -444,6 +492,28 @@ bool CConfigManager::Save()
 	}
 
 	log_info("config", "saved to " CONFIG_FILE);
+
+	if(WroteScConfigFile)
+	{
+		if(!m_pStorage->RenameFile(aScConfigFileTmp, SC_CONFIG_FILE, IStorage::TYPE_SAVE))
+		{
+			log_error("config", "ERROR: renaming %s to " SC_CONFIG_FILE " failed", aScConfigFileTmp);
+			return false;
+		}
+
+		log_info("config", "saved to " SC_CONFIG_FILE);
+	}
+	else if(m_pStorage->FileExists(SC_CONFIG_FILE, IStorage::TYPE_SAVE))
+	{
+		if(!m_pStorage->RemoveFile(SC_CONFIG_FILE, IStorage::TYPE_SAVE))
+		{
+			log_error("config", "ERROR: removing " SC_CONFIG_FILE " failed");
+			return false;
+		}
+
+		log_info("config", "removed " SC_CONFIG_FILE);
+	}
+
 	return true;
 }
 
@@ -454,9 +524,14 @@ void CConfigManager::RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 
 void CConfigManager::WriteLine(const char *pLine)
 {
-	if(!m_ConfigFile ||
-		io_write(m_ConfigFile, pLine, str_length(pLine)) != static_cast<unsigned>(str_length(pLine)) ||
-		!io_write_newline(m_ConfigFile))
+	WriteLineTo(m_ConfigFile, pLine);
+}
+
+void CConfigManager::WriteLineTo(IOHANDLE File, const char *pLine)
+{
+	if(!File ||
+		io_write(File, pLine, str_length(pLine)) != static_cast<unsigned>(str_length(pLine)) ||
+		!io_write_newline(File))
 	{
 		m_Failed = true;
 	}

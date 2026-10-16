@@ -5182,6 +5182,15 @@ int main(int argc, const char **argv)
 		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 	}
 
+	// execute SneakClient's config file
+	if(pStorage->FileExists(SC_CONFIG_FILE, IStorage::TYPE_ALL))
+	{
+		if(!pConsole->ExecuteFile(SC_CONFIG_FILE, IConsole::CLIENT_ID_UNSPECIFIED))
+		{
+			log_error("client", "Failed to load config from '" SC_CONFIG_FILE "'.");
+		}
+	}
+
 	// execute autoexec file
 	if(pStorage->FileExists(AUTOEXEC_CLIENT_FILE, IStorage::TYPE_ALL))
 	{

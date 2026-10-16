@@ -1,2 +1,32 @@
+Control
+== 控制
+
+Don't send your own typing status (no "..." bubble)
+== 不发送自己的输入状态（不显示“...”气泡）
+
+Enable sneaking
+== 启用潜行
+
+Hide typing status
+== 隐藏输入状态
+
+Main switch
+== 总开关
+
+Maybe all the settings are at their default values
+== 可能所有设置都是默认值
+
+Open SneakClient's settings file
+== 打开 SneakClient 的配置文件
+
+Settings file doesn't exists
+== 配置文件不存在
+
+SneakClient's settings file
+== SneakClient 的配置文件
+
 Sneaking
 == 潜行
+
+Understood
+== 了解
