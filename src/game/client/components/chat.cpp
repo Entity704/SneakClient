@@ -1211,7 +1211,7 @@ void CChat::OnRender()
 		const bool IsConverseInput = str_startswith_nocase(pInput, "/c ") || str_startswith_nocase(pInput, "/converse ");
 		const int ConverseTarget = IsConverseInput ? LastWhisperTargetClientId() : -1;
 
-		if(ConverseTarget >= 0)
+		if(ConverseTarget >= 0 && g_Config.m_ScShowConverseTarget)
 		{
 			TextRender()->TextEx(&InputCursor, "↳ ");
 

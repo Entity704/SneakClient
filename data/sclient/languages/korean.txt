@@ -4,7 +4,7 @@ Control
 Don't send your own hook collision line enabled status
 == 
 
-Don't send your own typing status (no "..." bubble)
+Don't send your own typing status (no '...' bubble)
 == 
 
 Enable sneaking
@@ -26,6 +26,12 @@ Private hook collision line
 == 
 
 Settings file doesn't exists
+== 
+
+Show converse target
+== 
+
+Show your last whisper target at the front of the input area instead of 'All' or 'Team'
 == 
 
 SneakClient's settings file

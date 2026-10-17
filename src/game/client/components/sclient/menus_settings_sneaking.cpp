@@ -25,6 +25,13 @@ void CMenus::RenderSettingsSneaking(CUIRect MainView)
     }
     Ui()->DoToolTip(&g_Config.m_ScSneaking, &Button, Localize("Main switch"));
 
+    Left.HSplitTop(20.0f, &Button, &Left);
+    if(DoButton_CheckBox(&g_Config.m_ScShowConverseTarget, Localize("Show converse target"), g_Config.m_ScShowConverseTarget, &Button))
+    {
+        g_Config.m_ScShowConverseTarget ^= 1;
+    }
+    Ui()->DoToolTip(&g_Config.m_ScShowConverseTarget, &Button, Localize("Show your last whisper target at the front of the input area instead of 'All' or 'Team'"));
+
     CUIRect SettingsButton;
     Left.HSplitBottom(20.0f, &Left, &SettingsButton);
     Left.HSplitBottom(5.0f, &Left, nullptr);
@@ -44,7 +51,7 @@ void CMenus::RenderSettingsSneaking(CUIRect MainView)
     {
         g_Config.m_ScHideTypingStatus ^= 1;
     }
-    Ui()->DoToolTip(&g_Config.m_ScHideTypingStatus, &Button, Localize("Don't send your own typing status (no \"...\" bubble)"));
+    Ui()->DoToolTip(&g_Config.m_ScHideTypingStatus, &Button, Localize("Don't send your own typing status (no '...' bubble)"));
 
     Right.HSplitTop(20.0f, &Button, &Right);
     if(DoButton_CheckBox(&g_Config.m_ScPrivateHookColl, Localize("Private hook collision line"), g_Config.m_ScPrivateHookColl, &Button))
