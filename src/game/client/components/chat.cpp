@@ -51,8 +51,11 @@ void CChat::CLine::Reset(CChat &This)
 CChat::CChat()
 {
 	m_Mode = MODE_NONE;
-	m_LastWhisperTargetClientId = -1;
-	m_aLastWhisperTargetName[0] = '\0';
+	for(int i = 0; i < NUM_DUMMIES; i++)
+	{
+		m_aLastWhisperTargetClientId[i] = -1;
+		m_aaLastWhisperTargetName[i][0] = '\0';
+	}
 
 	m_Input.SetCalculateOffsetCallback([this]() { return m_IsInputCensored; });
 	m_Input.SetDisplayTextCallback([this](char *pStr, size_t NumChars) {
@@ -149,8 +152,11 @@ void CChat::Reset()
 	m_ServerSupportsCommandInfo = false;
 	m_ServerCommandsNeedSorting = false;
 	m_aCurrentInputText[0] = '\0';
-	m_LastWhisperTargetClientId = -1;
-	m_aLastWhisperTargetName[0] = '\0';
+	for(int i = 0; i < NUM_DUMMIES; i++)
+	{
+		m_aLastWhisperTargetClientId[i] = -1;
+		m_aaLastWhisperTargetName[i][0] = '\0';
+	}
 	DisableMode();
 	m_vServerCommands.clear();
 	std::fill(std::begin(m_aLastSoundPlayed), std::end(m_aLastSoundPlayed), 0);
@@ -550,6 +556,11 @@ void CChat::DisableMode()
 
 void CChat::OnMessage(int MsgType, void *pRawMsg)
 {
+	OnMessage(MsgType, pRawMsg, g_Config.m_ClDummy);
+}
+
+void CChat::OnMessage(int MsgType, void *pRawMsg, int Conn)
+{
 	if(GameClient()->m_SuppressEvents)
 		return;
 
@@ -571,8 +582,9 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 
 		if(pMsg->m_Team == TEAM_WHISPER_SEND && pMsg->m_ClientId >= 0 && pMsg->m_ClientId < MAX_CLIENTS)
 		{
-			m_LastWhisperTargetClientId = pMsg->m_ClientId;
-			str_copy(m_aLastWhisperTargetName, GameClient()->m_aClients[pMsg->m_ClientId].m_aName);
+			const int Slot = Conn >= 0 && Conn < NUM_DUMMIES ? Conn : 0;
+			m_aLastWhisperTargetClientId[Slot] = pMsg->m_ClientId;
+			str_copy(m_aaLastWhisperTargetName[Slot], GameClient()->m_aClients[pMsg->m_ClientId].m_aName);
 		}
 
 		AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
@@ -600,16 +612,20 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
-int CChat::LastWhisperTargetClientId() const
+int CChat::LastWhisperTargetClientId(int Conn) const
 {
-	if(m_LastWhisperTargetClientId < 0 || m_LastWhisperTargetClientId >= MAX_CLIENTS)
+	if(Conn < 0 || Conn >= NUM_DUMMIES)
 		return -1;
 
-	const CGameClient::CClientData &Target = GameClient()->m_aClients[m_LastWhisperTargetClientId];
-	if(!Target.m_Active || Target.m_aName[0] == '\0' || str_comp(Target.m_aName, m_aLastWhisperTargetName) != 0)
+	const int ClientId = m_aLastWhisperTargetClientId[Conn];
+	if(ClientId < 0 || ClientId >= MAX_CLIENTS)
 		return -1;
 
-	return m_LastWhisperTargetClientId;
+	const CGameClient::CClientData &Target = GameClient()->m_aClients[ClientId];
+	if(!Target.m_Active || Target.m_aName[0] == '\0' || str_comp(Target.m_aName, m_aaLastWhisperTargetName[Conn]) != 0)
+		return -1;
+
+	return ClientId;
 }
 
 bool CChat::LineShouldHighlight(const char *pLine, const char *pName)
@@ -1209,13 +1225,13 @@ void CChat::OnRender()
 
 		const char *pInput = m_Input.GetString();
 		const bool IsConverseInput = str_startswith_nocase(pInput, "/c ") || str_startswith_nocase(pInput, "/converse ");
-		const int ConverseTarget = IsConverseInput ? LastWhisperTargetClientId() : -1;
+		const int ConverseTarget = IsConverseInput ? LastWhisperTargetClientId(g_Config.m_ClDummy) : -1;
 
 		if(ConverseTarget >= 0 && g_Config.m_ScShowConverseTarget)
 		{
 			TextRender()->TextEx(&InputCursor, "↳ ");
 
-			const float TeeSize = ScaledFontSize * (7.0f / 6.0f);
+			const float TeeSize = ScaledFontSize * 1.34f;
 			CTeeRenderInfo TeeRenderInfo = GameClient()->m_aClients[ConverseTarget].m_RenderInfo;
 			TeeRenderInfo.m_Size = TeeSize;
 			const vec2 TeeCenter(InputCursor.m_X + TeeSize / 2.0f, InputCursor.m_Y + ScaledFontSize / 2.0f);

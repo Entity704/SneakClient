@@ -1130,7 +1130,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 
 			if((pMsg->m_Team == 1 && (m_aClients[m_aLocalIds[0]].m_Team != m_aClients[m_aLocalIds[1]].m_Team || m_Teams.Team(m_aLocalIds[0]) != m_Teams.Team(m_aLocalIds[1]))) || pMsg->m_Team > 1)
 			{
-				m_Chat.OnMessage(MsgId, pRawMsg);
+				m_Chat.OnMessage(MsgId, pRawMsg, Conn);
 			}
 		}
 		return; // no need of all that stuff for the dummy

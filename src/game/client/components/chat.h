@@ -91,8 +91,8 @@ class CChat : public CComponent
 	};
 
 	int m_Mode;
-	int m_LastWhisperTargetClientId;
-	char m_aLastWhisperTargetName[MAX_NAME_LENGTH];
+	int m_aLastWhisperTargetClientId[NUM_DUMMIES];
+	char m_aaLastWhisperTargetName[NUM_DUMMIES][MAX_NAME_LENGTH];
 	bool m_Show;
 	bool m_CompletionUsed;
 	int m_CompletionChosen;
@@ -159,7 +159,7 @@ class CChat : public CComponent
 	static void ConchainChatWidth(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
-	int LastWhisperTargetClientId() const;
+	int LastWhisperTargetClientId(int Conn) const;
 	void StoreSave(const char *pText);
 
 public:
@@ -184,6 +184,7 @@ public:
 	void Reset();
 	void OnRelease() override;
 	void OnMessage(int MsgType, void *pRawMsg) override;
+	void OnMessage(int MsgType, void *pRawMsg, int Conn);
 	bool OnInput(const IInput::CEvent &Event) override;
 	void OnInit() override;
 
