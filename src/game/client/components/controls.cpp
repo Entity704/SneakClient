@@ -259,6 +259,9 @@ int CControls::SnapInput(int *pData)
 		break;
 	}
 
+	if(g_Config.m_ScSneaking && g_Config.m_ScHideTypingStatus)
+		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags &= ~PLAYERFLAG_CHATTING;
+
 	bool Send = m_aLastData[g_Config.m_ClDummy].m_PlayerFlags != m_aInputData[g_Config.m_ClDummy].m_PlayerFlags;
 
 	m_aLastData[g_Config.m_ClDummy].m_PlayerFlags = m_aInputData[g_Config.m_ClDummy].m_PlayerFlags;
