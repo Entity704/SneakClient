@@ -45,4 +45,11 @@ void CMenus::RenderSettingsSneaking(CUIRect MainView)
         g_Config.m_ScHideTypingStatus ^= 1;
     }
     Ui()->DoToolTip(&g_Config.m_ScHideTypingStatus, &Button, Localize("Don't send your own typing status (no \"...\" bubble)"));
+
+    Right.HSplitTop(20.0f, &Button, &Right);
+    if(DoButton_CheckBox(&g_Config.m_ScPrivateHookColl, Localize("Private hook collision line"), g_Config.m_ScPrivateHookColl, &Button))
+    {
+        g_Config.m_ScPrivateHookColl ^= 1;
+    }
+    Ui()->DoToolTip(&g_Config.m_ScPrivateHookColl, &Button, Localize("Don't send your own hook collision line enabled status"));
 }

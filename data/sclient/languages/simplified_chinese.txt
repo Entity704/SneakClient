@@ -1,6 +1,9 @@
 Control
 == 控制
 
+Don't send your own hook collision line enabled status
+== 不发送自己的钩索辅助线启用状态
+
 Don't send your own typing status (no "..." bubble)
 == 不发送自己的输入状态（不显示“...”气泡）
 
@@ -18,6 +21,9 @@ Maybe all the settings are at their default values
 
 Open SneakClient's settings file
 == 打开 SneakClient 的配置文件
+
+Private hook collision line
+== 私密钩索辅助线
 
 Settings file doesn't exists
 == 配置文件不存在

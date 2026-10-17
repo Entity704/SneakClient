@@ -1,6 +1,9 @@
 Control
 == 
 
+Don't send your own hook collision line enabled status
+== 
+
 Don't send your own typing status (no "..." bubble)
 == 
 
@@ -17,6 +20,9 @@ Maybe all the settings are at their default values
 == 
 
 Open SneakClient's settings file
+== 
+
+Private hook collision line
 == 
 
 Settings file doesn't exists
