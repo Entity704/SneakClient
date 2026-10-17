@@ -31,6 +31,8 @@ void CMenus::RenderSettingsCredits(CUIRect MainView)
 		"Bamcane, qxdFox, ZerolAcqua, swarfeya, Scrumplex, 12944qwerty, "
 		"Pointer31, ProfSapphire, 0xpixty, GlimmeR, horoni & others\n"
 		"\n"
+		"[SneakClient] Help and code by EntityMC, Marxie & others\n"
+		"\n"
 		"Based on DDRace by the DDRace developers,";
 	const float FontSize = 16.0f;
 
