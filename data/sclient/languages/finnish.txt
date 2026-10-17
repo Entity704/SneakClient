@@ -1,3 +1,6 @@
+Client-side /c
+== 
+
 Control
 == 
 
@@ -8,6 +11,9 @@ Don't send your own typing status (no '...' bubble)
 == 
 
 Enable sneaking
+== 
+
+Handle /c and /converse on the client side, so main and dummy whisper the same player
 == 
 
 Hide typing status

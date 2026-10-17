@@ -56,6 +56,8 @@ CChat::CChat()
 		m_aLastWhisperTargetClientId[i] = -1;
 		m_aaLastWhisperTargetName[i][0] = '\0';
 	}
+	m_LocalConverseTargetClientId = -1;
+	m_aLocalConverseTargetName[0] = '\0';
 
 	m_Input.SetCalculateOffsetCallback([this]() { return m_IsInputCensored; });
 	m_Input.SetDisplayTextCallback([this](char *pStr, size_t NumChars) {
@@ -157,6 +159,8 @@ void CChat::Reset()
 		m_aLastWhisperTargetClientId[i] = -1;
 		m_aaLastWhisperTargetName[i][0] = '\0';
 	}
+	m_LocalConverseTargetClientId = -1;
+	m_aLocalConverseTargetName[0] = '\0';
 	DisableMode();
 	m_vServerCommands.clear();
 	std::fill(std::begin(m_aLastSoundPlayed), std::end(m_aLastSoundPlayed), 0);
@@ -585,6 +589,9 @@ void CChat::OnMessage(int MsgType, void *pRawMsg, int Conn)
 			const int Slot = Conn >= 0 && Conn < NUM_DUMMIES ? Conn : 0;
 			m_aLastWhisperTargetClientId[Slot] = pMsg->m_ClientId;
 			str_copy(m_aaLastWhisperTargetName[Slot], GameClient()->m_aClients[pMsg->m_ClientId].m_aName);
+
+			m_LocalConverseTargetClientId = pMsg->m_ClientId;
+			str_copy(m_aLocalConverseTargetName, GameClient()->m_aClients[pMsg->m_ClientId].m_aName);
 		}
 
 		AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
@@ -626,6 +633,18 @@ int CChat::LastWhisperTargetClientId(int Conn) const
 		return -1;
 
 	return ClientId;
+}
+
+int CChat::LocalConverseTargetClientId() const
+{
+	if(m_LocalConverseTargetClientId < 0 || m_LocalConverseTargetClientId >= MAX_CLIENTS)
+		return -1;
+
+	const CGameClient::CClientData &Target = GameClient()->m_aClients[m_LocalConverseTargetClientId];
+	if(!Target.m_Active || Target.m_aName[0] == '\0' || str_comp(Target.m_aName, m_aLocalConverseTargetName) != 0)
+		return -1;
+
+	return m_LocalConverseTargetClientId;
 }
 
 bool CChat::LineShouldHighlight(const char *pLine, const char *pName)
@@ -1225,7 +1244,7 @@ void CChat::OnRender()
 
 		const char *pInput = m_Input.GetString();
 		const bool IsConverseInput = str_startswith_nocase(pInput, "/c ") || str_startswith_nocase(pInput, "/converse ");
-		const int ConverseTarget = IsConverseInput ? LastWhisperTargetClientId(g_Config.m_ClDummy) : -1;
+		const int ConverseTarget = IsConverseInput ? (g_Config.m_ScLocalConverse ? LocalConverseTargetClientId() : LastWhisperTargetClientId(g_Config.m_ClDummy)) : -1;
 
 		if(ConverseTarget >= 0 && g_Config.m_ScShowConverseTarget)
 		{
@@ -1407,6 +1426,34 @@ void CChat::SendChat(int Team, const char *pLine)
 		return;
 
 	m_LastChatSend = time();
+
+	char aLine[MAX_CHAT_LENGTH];
+
+	if(g_Config.m_ScLocalConverse)
+	{
+		static constexpr const char *CONVERSE_PREFIX = "/converse ";
+		static constexpr const char *SHORT_CONVERSE_PREFIX = "/c ";
+		const char *pMessage = nullptr;
+		if(str_startswith_nocase(pLine, SHORT_CONVERSE_PREFIX))
+			pMessage = pLine + str_length(SHORT_CONVERSE_PREFIX);
+		else if(str_startswith_nocase(pLine, CONVERSE_PREFIX))
+			pMessage = pLine + str_length(CONVERSE_PREFIX);
+
+		const int TargetClientId = pMessage != nullptr ? LocalConverseTargetClientId() : -1;
+		if(TargetClientId >= 0)
+		{
+			char aEscapedName[MAX_NAME_LENGTH * 2 + 1];
+			char *pDst = aEscapedName;
+			str_escape(&pDst, GameClient()->m_aClients[TargetClientId].m_aName, aEscapedName + sizeof(aEscapedName));
+
+			char aPrefix[MAX_NAME_LENGTH * 2 + 8];
+			const int PrefixLength = str_format(aPrefix, sizeof(aPrefix), "/w \"%s\" ", aEscapedName);
+
+			str_copy(aLine, aPrefix);
+			str_utf8_truncate(aLine + PrefixLength, sizeof(aLine) - PrefixLength, pMessage, MAX_CHAT_LENGTH - PrefixLength);
+			pLine = aLine;
+		}
+	}
 
 	if(GameClient()->Client()->IsSixup())
 	{

@@ -1,3 +1,6 @@
+Client-side /c
+== 客户端接管继续私聊
+
 Control
 == 控制
 
@@ -9,6 +12,9 @@ Don't send your own typing status (no '...' bubble)
 
 Enable sneaking
 == 启用潜行
+
+Handle /c and /converse on the client side, so main and dummy whisper the same player
+== 客户端处理 /c 与 /converse 逻辑，以统一本体与分身继续私聊的对象
 
 Hide typing status
 == 隐藏输入状态

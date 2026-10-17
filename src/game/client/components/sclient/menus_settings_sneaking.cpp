@@ -9,7 +9,7 @@ void CMenus::RenderSettingsSneaking(CUIRect MainView)
     CUIRect Button, Left, Right, Label;
 
     CUIRect Control;
-    MainView.HSplitTop(110.0f, &Control, &MainView);
+    MainView.HSplitTop(130.0f, &Control, &MainView);
     Control.HSplitTop(30.0f, &Label, &Control);
     Ui()->DoLabel(&Label, Localize("Control"), 20.0f, TEXTALIGN_ML);
     Label.VSplitMid(nullptr, &Label, 20.0f);
@@ -31,6 +31,13 @@ void CMenus::RenderSettingsSneaking(CUIRect MainView)
         g_Config.m_ScShowConverseTarget ^= 1;
     }
     Ui()->DoToolTip(&g_Config.m_ScShowConverseTarget, &Button, Localize("Show your last whisper target at the front of the input area instead of 'All' or 'Team'"));
+
+    Left.HSplitTop(20.0f, &Button, &Left);
+    if(DoButton_CheckBox(&g_Config.m_ScLocalConverse, Localize("Client-side /c"), g_Config.m_ScLocalConverse, &Button))
+    {
+        g_Config.m_ScLocalConverse ^= 1;
+    }
+    Ui()->DoToolTip(&g_Config.m_ScLocalConverse, &Button, Localize("Handle /c and /converse on the client side, so main and dummy whisper the same player"));
 
     CUIRect SettingsButton;
     Left.HSplitBottom(20.0f, &Left, &SettingsButton);

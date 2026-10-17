@@ -93,6 +93,8 @@ class CChat : public CComponent
 	int m_Mode;
 	int m_aLastWhisperTargetClientId[NUM_DUMMIES];
 	char m_aaLastWhisperTargetName[NUM_DUMMIES][MAX_NAME_LENGTH];
+	int m_LocalConverseTargetClientId;
+	char m_aLocalConverseTargetName[MAX_NAME_LENGTH];
 	bool m_Show;
 	bool m_CompletionUsed;
 	int m_CompletionChosen;
@@ -160,6 +162,7 @@ class CChat : public CComponent
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	int LastWhisperTargetClientId(int Conn) const;
+	int LocalConverseTargetClientId() const;
 	void StoreSave(const char *pText);
 
 public:

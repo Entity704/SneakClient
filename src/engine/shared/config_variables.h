@@ -809,6 +809,7 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
 MACRO_CONFIG_INT(ScSneaking, sc_sneaking, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable sneaking (main switch)")
 
 MACRO_CONFIG_INT(ScShowConverseTarget, sc_show_converse_target, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show your last whisper target at the front of the input area")
+MACRO_CONFIG_INT(ScLocalConverse, sc_local_converse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Handle /c and /converse on the client side, so main and dummy whisper the same player")
 
 MACRO_CONFIG_INT(ScHideTypingStatus, sc_hide_typing_status, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Don't send your own typing status to the server")
 MACRO_CONFIG_INT(ScPrivateHookColl, sc_private_hook_coll, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Don't send your own hook collision line enabled status to the server")
