@@ -91,6 +91,8 @@ class CChat : public CComponent
 	};
 
 	int m_Mode;
+	int m_LastWhisperTargetClientId;
+	char m_aLastWhisperTargetName[MAX_NAME_LENGTH];
 	bool m_Show;
 	bool m_CompletionUsed;
 	int m_CompletionChosen;
@@ -157,6 +159,7 @@ class CChat : public CComponent
 	static void ConchainChatWidth(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
+	int LastWhisperTargetClientId() const;
 	void StoreSave(const char *pText);
 
 public:
