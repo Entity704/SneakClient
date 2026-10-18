@@ -3798,6 +3798,12 @@ void CGameClient::UpdateSpectatorCursor()
 		m_CursorInfo.m_Target = mix_polynomial(aTime, aData, CCursorInfo::SAMPLE_FRAME_WINDOW, DisplayTime, vec2(0.0f, 0.0f));
 	}
 
+	if(m_Camera.HiddenSpecActive())
+	{
+		m_CursorInfo.m_WorldTarget = m_CursorInfo.m_Position + m_CursorInfo.m_Target;
+		return;
+	}
+
 	vec2 TargetCameraOffset(0, 0);
 	float l = length(m_CursorInfo.m_Target);
 
