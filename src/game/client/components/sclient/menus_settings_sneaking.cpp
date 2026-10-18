@@ -5,72 +5,72 @@
 
 void CMenus::RenderSettingsSneaking(CUIRect MainView)
 {
-    char aBuf[128 + IO_MAX_PATH_LENGTH];
-    CUIRect Button, Left, Right, Label;
+	char aBuf[128 + IO_MAX_PATH_LENGTH];
+	CUIRect Button, Left, Right, Label;
 
-    CUIRect Control;
-    MainView.HSplitTop(130.0f, &Control, &MainView);
-    Control.HSplitTop(30.0f, &Label, &Control);
-    Ui()->DoLabel(&Label, Localize("Control"), 20.0f, TEXTALIGN_ML);
-    Label.VSplitMid(nullptr, &Label, 20.0f);
-    Ui()->DoLabel(&Label, Localize("Sneaking"), 20.0f, TEXTALIGN_ML);
+	CUIRect Control;
+	MainView.HSplitTop(130.0f, &Control, &MainView);
+	Control.HSplitTop(30.0f, &Label, &Control);
+	Ui()->DoLabel(&Label, Localize("Control"), 20.0f, TEXTALIGN_ML);
+	Label.VSplitMid(nullptr, &Label, 20.0f);
+	Ui()->DoLabel(&Label, Localize("Sneaking"), 20.0f, TEXTALIGN_ML);
 
-    Control.HSplitTop(5.0f, nullptr, &Control);
-    Control.VSplitMid(&Left, &Right, 20.0f);
+	Control.HSplitTop(5.0f, nullptr, &Control);
+	Control.VSplitMid(&Left, &Right, 20.0f);
 
-    Left.HSplitTop(20.0f, &Button, &Left);
-    if(DoButton_CheckBox(&g_Config.m_ScSneaking, Localize("Enable sneaking"), g_Config.m_ScSneaking, &Button))
-    {
-        g_Config.m_ScSneaking ^= 1;
-    }
-    Ui()->DoToolTip(&g_Config.m_ScSneaking, &Button, Localize("Main switch"));
+	Left.HSplitTop(20.0f, &Button, &Left);
+	if(DoButton_CheckBox(&g_Config.m_ScSneaking, Localize("Enable sneaking"), g_Config.m_ScSneaking, &Button))
+	{
+		g_Config.m_ScSneaking ^= 1;
+	}
+	Ui()->DoToolTip(&g_Config.m_ScSneaking, &Button, Localize("Main switch"));
 
-    Left.HSplitTop(20.0f, &Button, &Left);
-    if(DoButton_CheckBox(&g_Config.m_ScShowConverseTarget, Localize("Show converse target"), g_Config.m_ScShowConverseTarget, &Button))
-    {
-        g_Config.m_ScShowConverseTarget ^= 1;
-    }
-    Ui()->DoToolTip(&g_Config.m_ScShowConverseTarget, &Button, Localize("Show your last whisper target at the front of the input area instead of 'All' or 'Team'"));
+	Left.HSplitTop(20.0f, &Button, &Left);
+	if(DoButton_CheckBox(&g_Config.m_ScShowConverseTarget, Localize("Show converse target"), g_Config.m_ScShowConverseTarget, &Button))
+	{
+		g_Config.m_ScShowConverseTarget ^= 1;
+	}
+	Ui()->DoToolTip(&g_Config.m_ScShowConverseTarget, &Button, Localize("Show your last whisper target at the front of the input area instead of 'All' or 'Team'"));
 
-    Left.HSplitTop(20.0f, &Button, &Left);
-    if(DoButton_CheckBox(&g_Config.m_ScLocalConverse, Localize("Client-side /c"), g_Config.m_ScLocalConverse, &Button))
-    {
-        g_Config.m_ScLocalConverse ^= 1;
-    }
-    Ui()->DoToolTip(&g_Config.m_ScLocalConverse, &Button, Localize("Handle /c and /converse on the client side, so main and dummy whisper the same player"));
+	Left.HSplitTop(20.0f, &Button, &Left);
+	if(DoButton_CheckBox(&g_Config.m_ScLocalConverse, Localize("Client-side /c"), g_Config.m_ScLocalConverse, &Button))
+	{
+		g_Config.m_ScLocalConverse ^= 1;
+	}
+	Ui()->DoToolTip(&g_Config.m_ScLocalConverse, &Button, Localize("Handle /c and /converse on the client side, so main and dummy whisper the same player"));
 
-    CUIRect SettingsButton;
-    Left.HSplitBottom(20.0f, &Left, &SettingsButton);
-    Left.HSplitBottom(5.0f, &Left, nullptr);
-    static CButtonContainer s_SettingsButtonId;
-    if(DoButton_Menu(&s_SettingsButtonId, Localize("SneakClient's settings file"), 0, &SettingsButton))
-    {
-        Storage()->GetCompletePath(IStorage::TYPE_SAVE, SC_CONFIG_FILE, aBuf, sizeof(aBuf));
-        if(Storage()->FileExists(SC_CONFIG_FILE, IStorage::TYPE_SAVE))
-            Client()->ViewFile(aBuf);
-        else
-            PopupMessage(Localize("Settings file doesn't exists"), Localize("Maybe all the settings are at their default values"), Localize("Understood"));
-    }
-    Ui()->DoToolTip(&s_SettingsButtonId, &SettingsButton, Localize("Open SneakClient's settings file"));
+	CUIRect SettingsButton;
+	Left.HSplitBottom(20.0f, &Left, &SettingsButton);
+	Left.HSplitBottom(5.0f, &Left, nullptr);
+	static CButtonContainer s_SettingsButtonId;
+	if(DoButton_Menu(&s_SettingsButtonId, Localize("SneakClient's settings file"), 0, &SettingsButton))
+	{
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, SC_CONFIG_FILE, aBuf, sizeof(aBuf));
+		if(Storage()->FileExists(SC_CONFIG_FILE, IStorage::TYPE_SAVE))
+			Client()->ViewFile(aBuf);
+		else
+			PopupMessage(Localize("Settings file doesn't exists"), Localize("Maybe all the settings are at their default values"), Localize("Understood"));
+	}
+	Ui()->DoToolTip(&s_SettingsButtonId, &SettingsButton, Localize("Open SneakClient's settings file"));
 
-    Right.HSplitTop(20.0f, &Button, &Right);
-    if(DoButton_CheckBox(&g_Config.m_ScHideTypingStatus, Localize("Hide typing status"), g_Config.m_ScHideTypingStatus, &Button))
-    {
-        g_Config.m_ScHideTypingStatus ^= 1;
-    }
-    Ui()->DoToolTip(&g_Config.m_ScHideTypingStatus, &Button, Localize("Don't send your own typing status (no '...' bubble)"));
+	Right.HSplitTop(20.0f, &Button, &Right);
+	if(DoButton_CheckBox(&g_Config.m_ScHideTypingStatus, Localize("Hide typing status"), g_Config.m_ScHideTypingStatus, &Button))
+	{
+		g_Config.m_ScHideTypingStatus ^= 1;
+	}
+	Ui()->DoToolTip(&g_Config.m_ScHideTypingStatus, &Button, Localize("Don't send your own typing status (no '...' bubble)"));
 
-    Right.HSplitTop(20.0f, &Button, &Right);
-    if(DoButton_CheckBox(&g_Config.m_ScPrivateHookColl, Localize("Private hook collision line"), g_Config.m_ScPrivateHookColl, &Button))
-    {
-        g_Config.m_ScPrivateHookColl ^= 1;
-    }
-    Ui()->DoToolTip(&g_Config.m_ScPrivateHookColl, &Button, Localize("Don't send your own hook collision line enabled status"));
+	Right.HSplitTop(20.0f, &Button, &Right);
+	if(DoButton_CheckBox(&g_Config.m_ScPrivateHookColl, Localize("Private hook collision line"), g_Config.m_ScPrivateHookColl, &Button))
+	{
+		g_Config.m_ScPrivateHookColl ^= 1;
+	}
+	Ui()->DoToolTip(&g_Config.m_ScPrivateHookColl, &Button, Localize("Don't send your own hook collision line enabled status"));
 
-    Right.HSplitTop(20.0f, &Button, &Right);
-    if(DoButton_CheckBox(&g_Config.m_ScHiddenSpec, Localize("Hidden spectating"), g_Config.m_ScHiddenSpec, &Button))
-    {
-        g_Config.m_ScHiddenSpec ^= 1;
-    }
-    Ui()->DoToolTip(&g_Config.m_ScHiddenSpec, &Button, Localize("Use peripheral vision to spectating"));
+	Right.HSplitTop(20.0f, &Button, &Right);
+	if(DoButton_CheckBox(&g_Config.m_ScHiddenSpec, Localize("Hidden spectating"), g_Config.m_ScHiddenSpec, &Button))
+	{
+		g_Config.m_ScHiddenSpec ^= 1;
+	}
+	Ui()->DoToolTip(&g_Config.m_ScHiddenSpec, &Button, Localize("Use peripheral vision to spectating"));
 }
