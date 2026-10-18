@@ -717,9 +717,10 @@ void CCamera::ExtendHiddenSpecShowDistance(float *pX, float *pY) const
 	}
 
 	const float Border = 32.0f * 16.0f;
-	const float Margin = g_Config.m_ScHiddenSpecMargin;
-	float NeedX = absolute(LocalPos.x - ViewPos.x) + Margin;
-	float NeedY = absolute(LocalPos.y - ViewPos.y) + Margin;
+	const float MarginX = *pX / 2.0f + Border;
+	const float MarginY = *pY / 2.0f + Border;
+	float NeedX = absolute(LocalPos.x - ViewPos.x) + MarginX;
+	float NeedY = absolute(LocalPos.y - ViewPos.y) + MarginY;
 	if(LocalCharActive)
 	{
 		NeedX = 2.0f * (NeedX - Border);

@@ -814,4 +814,3 @@ MACRO_CONFIG_INT(ScLocalConverse, sc_local_converse, 0, 0, 1, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ScHideTypingStatus, sc_hide_typing_status, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Don't send your own typing status to the server")
 MACRO_CONFIG_INT(ScPrivateHookColl, sc_private_hook_coll, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Don't send your own hook collision line enabled status to the server")
 MACRO_CONFIG_INT(ScHiddenSpec, sc_hidden_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use peripheral vision to spectating")
-MACRO_CONFIG_INT(ScHiddenSpecMargin, sc_hidden_spec_margin, 2000, 0, 20000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Extra view distance to request when hidden spectating")
