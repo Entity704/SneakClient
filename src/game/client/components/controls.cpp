@@ -313,6 +313,22 @@ int CControls::SnapInput(int *pData)
 		if(!m_aInputDirectionLeft[g_Config.m_ClDummy] && m_aInputDirectionRight[g_Config.m_ClDummy])
 			m_aInputData[g_Config.m_ClDummy].m_Direction = 1;
 
+		if(GameClient()->m_Camera.HiddenSpecActive())
+		{
+			CNetObj_PlayerInput &Input = m_aInputData[g_Config.m_ClDummy];
+			/*
+			Input.m_Direction = 0;
+			Input.m_Jump = 0;
+			Input.m_Hook = 0;
+			Input.m_Fire = 0;
+			Input.m_WantedWeapon = 0;
+			Input.m_NextWeapon = 0;
+			Input.m_PrevWeapon = 0;
+			*/
+			if(Client()->ServerCapAnyPlayerFlag())
+				Input.m_PlayerFlags |= PLAYERFLAG_SPEC_CAM;
+		}
+
 		// dummy copy moves
 		if(g_Config.m_ClDummyCopyMoves)
 		{

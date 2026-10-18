@@ -971,6 +971,8 @@ private:
 	CTuningParams *TuningList() { return m_aTuningList; }
 
 	float m_LastShowDistanceZoom;
+	float m_LastShowDistanceX;
+	float m_LastShowDistanceY;
 	float m_LastZoom;
 	float m_LastScreenAspect;
 	float m_LastDeadzone;

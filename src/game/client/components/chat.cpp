@@ -1425,6 +1425,52 @@ void CChat::SendChat(int Team, const char *pLine)
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
 
+	if(g_Config.m_ScHiddenSpec && g_Config.m_ScSneaking && Client()->State() == IClient::STATE_ONLINE)
+	{
+		const char *pTrimmed = str_utf8_skip_whitespaces(pLine);
+		const bool IsPause = str_startswith_nocase(pTrimmed, "/pause") &&
+				     (pTrimmed[6] == '\0' || pTrimmed[6] == ' ');
+		const bool IsSpec = str_startswith_nocase(pTrimmed, "/spec") &&
+				    (pTrimmed[5] == '\0' || pTrimmed[5] == ' ');
+		if(IsPause || IsSpec)
+		{
+			CCamera &Camera = GameClient()->m_Camera;
+			const char *pArg = str_utf8_skip_whitespaces(pTrimmed + (IsPause ? 6 : 5));
+
+			if(Camera.HiddenSpecActive())
+			{
+				if(IsSpec && pArg[0] != '\0')
+				{
+					if(!Camera.SetHiddenSpecTargetByName(pArg))
+					{
+						char aBuf[256];
+						str_format(aBuf, sizeof(aBuf), "Hidden spectating: unknown player '%s'", pArg);
+						GameClient()->Echo(aBuf);
+					}
+					return;
+				}
+				Camera.ToggleHiddenSpec();
+				return;
+			}
+
+			// throw the chores to the server if player is really paused
+			if(!GameClient()->m_Snap.m_SpecInfo.m_Active)
+			{
+				const bool HasTarget = IsSpec && pArg[0] != '\0';
+				if(Camera.ToggleHiddenSpec())
+				{
+					if(HasTarget && !Camera.SetHiddenSpecTargetByName(pArg))
+					{
+						char aBuf[256];
+						str_format(aBuf, sizeof(aBuf), "Hidden spectating: unknown player '%s', using free view", pArg);
+						GameClient()->Echo(aBuf);
+					}
+					return;
+				}
+			}
+		}
+	}
+
 	m_LastChatSend = time();
 
 	char aLine[MAX_CHAT_LENGTH];

@@ -699,6 +699,8 @@ void CGameClient::OnReset()
 	// m_MapBugs and m_aTuningList are reset in LoadMapSettings
 
 	m_LastShowDistanceZoom = 0.0f;
+	m_LastShowDistanceX = 0.0f;
+	m_LastShowDistanceY = 0.0f;
 	m_LastZoom = 0.0f;
 	m_LastScreenAspect = 0.0f;
 	m_LastDeadzone = 0.0f;
@@ -708,6 +710,8 @@ void CGameClient::OnReset()
 	m_MultiViewPersonalZoom = 0.0f;
 	m_MultiViewActivated = false;
 	m_MultiView.m_IsInit = false;
+
+	m_Camera.ResetHiddenSpec();
 
 	m_CursorInfo.m_CursorOwnerId = -1;
 	m_CursorInfo.m_NumSamples = 0;
@@ -761,6 +765,8 @@ void CGameClient::UpdatePositions()
 
 	if(!m_MultiViewActivated && m_MultiView.m_IsInit)
 		ResetMultiView();
+
+	m_Camera.UpdateHiddenSpec();
 
 	UpdateRenderedCharacters();
 }
@@ -2315,16 +2321,18 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		// update state
 		m_aShowOthers[g_Config.m_ClDummy] = SHOW_OTHERS_ONLY_TEAM;
 	}
-	else if(m_aShowOthers[g_Config.m_ClDummy] == SHOW_OTHERS_NOT_SET || m_aShowOthers[g_Config.m_ClDummy] != g_Config.m_ClShowOthers)
+	else
 	{
+		const int WantedShowOthers = m_Camera.HiddenSpecActive() ? SHOW_OTHERS_ON : g_Config.m_ClShowOthers;
+		if(m_aShowOthers[g_Config.m_ClDummy] == SHOW_OTHERS_NOT_SET || m_aShowOthers[g_Config.m_ClDummy] != WantedShowOthers)
 		{
 			CNetMsg_Cl_ShowOthers Msg;
-			Msg.m_Show = g_Config.m_ClShowOthers;
+			Msg.m_Show = WantedShowOthers;
 			Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
-		}
 
-		// update state
-		m_aShowOthers[g_Config.m_ClDummy] = g_Config.m_ClShowOthers;
+			// update state
+			m_aShowOthers[g_Config.m_ClDummy] = WantedShowOthers;
+		}
 	}
 
 	if(m_aEnableSpectatorCount[0] == -1 || m_aEnableSpectatorCount[0] != g_Config.m_ClShowhudSpectatorCount)
@@ -2375,6 +2383,7 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 			CNetMsg_Cl_ShowDistance Msg;
 			float x, y;
 			Graphics()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
+			m_Camera.ExtendHiddenSpecShowDistance(&x, &y);
 			Msg.m_X = x;
 			Msg.m_Y = y;
 			CMsgPacker Packer(&Msg);
@@ -2393,13 +2402,16 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 	}
 
 	// send show distance
-	if(ShowDistanceZoom != m_LastShowDistanceZoom || Graphics()->ScreenAspect() != m_LastScreenAspect)
+	float ShowDistanceX, ShowDistanceY;
+	Graphics()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &ShowDistanceX, &ShowDistanceY);
+	m_Camera.ExtendHiddenSpecShowDistance(&ShowDistanceX, &ShowDistanceY);
+
+	if(ShowDistanceZoom != m_LastShowDistanceZoom || Graphics()->ScreenAspect() != m_LastScreenAspect ||
+		ShowDistanceX != m_LastShowDistanceX || ShowDistanceY != m_LastShowDistanceY)
 	{
 		CNetMsg_Cl_ShowDistance Msg;
-		float x, y;
-		Graphics()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
-		Msg.m_X = x;
-		Msg.m_Y = y;
+		Msg.m_X = ShowDistanceX;
+		Msg.m_Y = ShowDistanceY;
 		Client()->ChecksumData()->m_Zoom = ShowDistanceZoom;
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
@@ -2425,11 +2437,15 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 	}
 
 	m_LastShowDistanceZoom = ShowDistanceZoom;
+	m_LastShowDistanceX = ShowDistanceX;
+	m_LastShowDistanceY = ShowDistanceY;
 	m_LastZoom = Zoom;
 	m_LastScreenAspect = Graphics()->ScreenAspect();
 	m_LastDeadzone = Deadzone;
 	m_LastFollowFactor = FollowFactor;
 	m_LastDummyConnected = Client()->DummyConnected();
+
+	m_Camera.UpdateHiddenSpec();
 
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnNewSnapshot();

@@ -66,4 +66,11 @@ void CMenus::RenderSettingsSneaking(CUIRect MainView)
         g_Config.m_ScPrivateHookColl ^= 1;
     }
     Ui()->DoToolTip(&g_Config.m_ScPrivateHookColl, &Button, Localize("Don't send your own hook collision line enabled status"));
+
+    Right.HSplitTop(20.0f, &Button, &Right);
+    if(DoButton_CheckBox(&g_Config.m_ScHiddenSpec, Localize("Hidden spectating"), g_Config.m_ScHiddenSpec, &Button))
+    {
+        g_Config.m_ScHiddenSpec ^= 1;
+    }
+    Ui()->DoToolTip(&g_Config.m_ScHiddenSpec, &Button, Localize("Use peripheral vision to spectating"));
 }

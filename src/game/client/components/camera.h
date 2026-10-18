@@ -110,6 +110,16 @@ public:
 	void ToggleAutoSpecCamera();
 	void UpdateAutoSpecCameraTooltip();
 
+	bool HiddenSpecActive() const { return m_ScHiddenSpecActive; }
+	int HiddenSpecTarget() const { return m_ScHiddenSpecTarget; }
+	bool CanUseHiddenSpec() const;
+	bool ToggleHiddenSpec();
+	void UpdateHiddenSpec();
+	void ResetHiddenSpec();
+	void SetHiddenSpecTarget(int ClientId);
+	bool SetHiddenSpecTargetByName(const char *pName);
+	void ExtendHiddenSpecShowDistance(float *pX, float *pY) const;
+
 	const char *AutoSpecCameraTooltip() { return m_aAutoSpecCameraTooltip; }
 
 private:
@@ -123,6 +133,10 @@ private:
 
 	bool m_ForceFreeview;
 	vec2 m_ForceFreeviewPos;
+	bool m_ScHiddenSpecActive;
+	int m_ScHiddenSpecTarget;
+	vec2 m_ScHiddenSpecLastPos;
+	bool m_ScHiddenSpecHasPos;
 	int m_GotoSwitchOffset;
 	int m_GotoTeleOffset;
 	ivec2 m_GotoSwitchLastPos;

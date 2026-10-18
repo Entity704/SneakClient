@@ -6,9 +6,12 @@
 #include "controls.h"
 
 #include <base/log.h>
+#include <base/str.h>
 #include <base/vmath.h>
 
 #include <engine/shared/config.h>
+
+#include <generated/protocol.h>
 
 #include <game/client/gameclient.h>
 #include <game/collision.h>
@@ -24,6 +27,10 @@ CCamera::CCamera()
 	m_Zoom = 1.0f;
 	m_Zooming = false;
 	m_ForceFreeview = false;
+	m_ScHiddenSpecActive = false;
+	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
+	m_ScHiddenSpecLastPos = vec2(0, 0);
+	m_ScHiddenSpecHasPos = false;
 	m_GotoSwitchOffset = 0;
 	m_GotoTeleOffset = 0;
 	m_GotoSwitchLastPos = ivec2(-1, -1);
@@ -497,6 +504,211 @@ void CCamera::ConGotoTele(IConsole::IResult *pResult, void *pUserData)
 {
 	CCamera *pSelf = (CCamera *)pUserData;
 	pSelf->GotoTele(pResult->GetInteger(0), pResult->NumArguments() > 1 ? pResult->GetInteger(1) : -1);
+}
+
+bool CCamera::CanUseHiddenSpec() const
+{
+	if(!g_Config.m_ScHiddenSpec || !g_Config.m_ScSneaking)
+		return false;
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return false;
+
+	const CGameClient *pGameClient = GameClient();
+	const int LocalId = pGameClient->m_Snap.m_LocalClientId;
+	if(LocalId < 0 || LocalId >= MAX_CLIENTS)
+		return false;
+
+	if(pGameClient->m_Snap.m_pLocalInfo && pGameClient->m_Snap.m_pLocalInfo->m_Team == TEAM_SPECTATORS)
+		return false;
+	if(pGameClient->m_aClients[LocalId].m_Paused || pGameClient->m_aClients[LocalId].m_Spec)
+		return false;
+
+	return true;
+}
+
+bool CCamera::ToggleHiddenSpec()
+{
+	if(m_ScHiddenSpecActive)
+	{
+		ResetHiddenSpec();
+		return false;
+	}
+
+	if(!CanUseHiddenSpec())
+		return false;
+
+	m_ScHiddenSpecActive = true;
+	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
+	m_ScHiddenSpecHasPos = false;
+	m_ScHiddenSpecLastPos = m_Center;
+	GameClient()->m_MultiViewActivated = false;
+	return true;
+}
+
+void CCamera::ResetHiddenSpec()
+{
+	m_ScHiddenSpecActive = false;
+	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
+	m_ScHiddenSpecHasPos = false;
+	m_ScHiddenSpecLastPos = vec2(0, 0);
+
+	CGameClient::CSnapState &Snap = GameClient()->m_Snap;
+	Snap.m_SpecInfo.m_Active = false;
+	Snap.m_SpecInfo.m_SpectatorId = SPEC_FREEVIEW;
+	Snap.m_SpecInfo.m_UsePosition = false;
+}
+
+void CCamera::SetHiddenSpecTarget(int ClientId)
+{
+	if(!m_ScHiddenSpecActive || ClientId < SPEC_FREEVIEW || ClientId >= MAX_CLIENTS)
+		return;
+	m_ScHiddenSpecTarget = ClientId;
+	m_ScHiddenSpecHasPos = false;
+}
+
+bool CCamera::SetHiddenSpecTargetByName(const char *pName)
+{
+	CGameClient *pGameClient = GameClient();
+	int TargetId = -1;
+
+	int ParsedId;
+	if(str_toint(pName, &ParsedId) && ParsedId >= 0 && ParsedId < MAX_CLIENTS)
+	{
+		TargetId = ParsedId;
+	}
+	else
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(!pGameClient->m_aClients[i].m_Active)
+				continue;
+			if(str_comp_nocase(pGameClient->m_aClients[i].m_aName, pName) == 0)
+			{
+				TargetId = i;
+				break;
+			}
+		}
+	}
+
+	if(TargetId < 0 || TargetId >= MAX_CLIENTS || !pGameClient->m_aClients[TargetId].m_Active)
+		return false;
+
+	SetHiddenSpecTarget(TargetId);
+	return true;
+}
+
+void CCamera::UpdateHiddenSpec()
+{
+	if(m_ScHiddenSpecActive && !CanUseHiddenSpec())
+		ResetHiddenSpec();
+
+	if(!m_ScHiddenSpecActive)
+		return;
+
+	CGameClient *pGameClient = GameClient();
+	CGameClient::CSnapState &Snap = pGameClient->m_Snap;
+
+	Snap.m_SpecInfo.m_Active = true;
+	Snap.m_SpecInfo.m_SpectatorId = m_ScHiddenSpecTarget;
+
+	if(m_ScHiddenSpecTarget < 0 || m_ScHiddenSpecTarget >= MAX_CLIENTS)
+	{
+		m_ScHiddenSpecTarget = SPEC_FREEVIEW;
+		Snap.m_SpecInfo.m_SpectatorId = SPEC_FREEVIEW;
+		Snap.m_SpecInfo.m_UsePosition = false;
+		return;
+	}
+
+	const CGameClient::CSnapState::CCharacterInfo &CharInfo = Snap.m_aCharacters[m_ScHiddenSpecTarget];
+	if(CharInfo.m_Active)
+	{
+		m_ScHiddenSpecLastPos = mix(
+			vec2(CharInfo.m_Prev.m_X, CharInfo.m_Prev.m_Y),
+			vec2(CharInfo.m_Cur.m_X, CharInfo.m_Cur.m_Y),
+			Client()->IntraGameTick(g_Config.m_ClDummy));
+		m_ScHiddenSpecHasPos = true;
+	}
+	else if(pGameClient->m_aClients[m_ScHiddenSpecTarget].m_SpecCharPresent)
+	{
+		m_ScHiddenSpecLastPos = pGameClient->m_aClients[m_ScHiddenSpecTarget].m_SpecChar;
+		m_ScHiddenSpecHasPos = true;
+	}
+
+	if(m_ScHiddenSpecHasPos)
+	{
+		Snap.m_SpecInfo.m_Position = m_ScHiddenSpecLastPos;
+		Snap.m_SpecInfo.m_UsePosition = true;
+	}
+	else
+	{
+		Snap.m_SpecInfo.m_UsePosition = false;
+	}
+}
+
+void CCamera::ExtendHiddenSpecShowDistance(float *pX, float *pY) const
+{
+	if(!m_ScHiddenSpecActive)
+		return;
+
+	const CGameClient *pGameClient = GameClient();
+	const int LocalId = pGameClient->m_aLocalIds[g_Config.m_ClDummy];
+	const bool LocalCharActive = LocalId >= 0 && LocalId < MAX_CLIENTS && pGameClient->m_Snap.m_aCharacters[LocalId].m_Active;
+
+	vec2 ViewPos;
+	if(m_ScHiddenSpecTarget >= 0 && m_ScHiddenSpecTarget < MAX_CLIENTS)
+	{
+		if(pGameClient->m_Snap.m_aCharacters[m_ScHiddenSpecTarget].m_Active)
+		{
+			const CNetObj_Character &TargetChar = pGameClient->m_Snap.m_aCharacters[m_ScHiddenSpecTarget].m_Cur;
+			ViewPos = vec2(TargetChar.m_X, TargetChar.m_Y);
+		}
+		else if(pGameClient->m_aClients[m_ScHiddenSpecTarget].m_SpecCharPresent)
+		{
+			ViewPos = pGameClient->m_aClients[m_ScHiddenSpecTarget].m_SpecChar;
+		}
+		else
+		{
+			float MapSize = 10000.0f;
+			if(Collision() != nullptr)
+				MapSize = std::max(Collision()->GetWidth(), Collision()->GetHeight()) * 32.0f + 2000.0f;
+			const float Need = 2.0f * MapSize;
+			if(Need > *pX)
+				*pX = Need;
+			if(Need > *pY)
+				*pY = Need;
+			return;
+		}
+	}
+	else
+	{
+		ViewPos = m_Center;
+	}
+
+	vec2 LocalPos = pGameClient->m_LocalCharacterPos;
+	if(LocalCharActive)
+	{
+		const CNetObj_Character &LocalChar = pGameClient->m_Snap.m_aCharacters[LocalId].m_Cur;
+		LocalPos = vec2(LocalChar.m_X, LocalChar.m_Y);
+	}
+
+	const float Border = 32.0f * 16.0f;
+	const float Margin = g_Config.m_ScHiddenSpecMargin;
+	float NeedX = absolute(LocalPos.x - ViewPos.x) + Margin;
+	float NeedY = absolute(LocalPos.y - ViewPos.y) + Margin;
+	if(LocalCharActive)
+	{
+		NeedX = 2.0f * (NeedX - Border);
+		NeedY = 2.0f * (NeedY - Border);
+	}
+
+	const float Quantum = 512.0f;
+	const float Limit = 200000.0f;
+	NeedX = std::min(std::max(NeedX, 0.0f), Limit);
+	NeedY = std::min(std::max(NeedY, 0.0f), Limit);
+	if(NeedX > *pX)
+		*pX = std::min(std::ceil(NeedX / Quantum) * Quantum, Limit);
+	if(NeedY > *pY)
+		*pY = std::min(std::ceil(NeedY / Quantum) * Quantum, Limit);
 }
 
 void CCamera::SetView(ivec2 Pos, bool Relative)

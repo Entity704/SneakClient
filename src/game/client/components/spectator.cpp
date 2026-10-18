@@ -228,7 +228,10 @@ void CSpectator::OnRender()
 			if(m_SelectedSpectatorId != NO_SELECTION)
 			{
 				if(m_SelectedSpectatorId == MULTI_VIEW)
-					GameClient()->m_MultiViewActivated = true;
+				{
+					if(!GameClient()->m_Camera.HiddenSpecActive())
+						GameClient()->m_MultiViewActivated = true;
+				}
 				else if(m_SelectedSpectatorId == SPEC_FREEVIEW || m_SelectedSpectatorId == SPEC_FOLLOW)
 					GameClient()->m_MultiViewActivated = false;
 
@@ -389,7 +392,7 @@ void CSpectator::OnRender()
 	{
 		m_SelectedSpectatorId = MULTI_VIEW;
 		MultiViewSelected = true;
-		if(MousePressed)
+		if(MousePressed && !GameClient()->m_Camera.HiddenSpecActive())
 		{
 			GameClient()->m_MultiViewActivated = true;
 		}
@@ -601,6 +604,13 @@ void CSpectator::OnReset()
 
 void CSpectator::Spectate(int SpectatorId)
 {
+	// SneakClient: selecting a player only moves our local camera while hidden spectating
+	if(GameClient()->m_Camera.HiddenSpecActive())
+	{
+		GameClient()->m_Camera.SetHiddenSpecTarget(SpectatorId);
+		return;
+	}
+
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		GameClient()->m_DemoSpecId = std::clamp(SpectatorId, (int)SPEC_FOLLOW, MAX_CLIENTS - 1);

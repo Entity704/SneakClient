@@ -16,6 +16,9 @@ Enable sneaking
 Handle /c and /converse on the client side, so main and dummy whisper the same player
 == 客户端处理 /c 与 /converse 逻辑，以统一本体与分身继续私聊的对象
 
+Hidden spectating
+== 隐匿旁观
+
 Hide typing status
 == 隐藏输入状态
 
@@ -48,3 +51,6 @@ Sneaking
 
 Understood
 == 了解
+
+Use peripheral vision to spectating
+== 使用余光进行旁观

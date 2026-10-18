@@ -16,6 +16,9 @@ Enable sneaking
 Handle /c and /converse on the client side, so main and dummy whisper the same player
 == 
 
+Hidden spectating
+== 
+
 Hide typing status
 == 
 
@@ -47,4 +50,7 @@ Sneaking
 == 
 
 Understood
+== 
+
+Use peripheral vision to spectating
 == 
