@@ -516,6 +516,8 @@ void CGameClient::OnDummySwap()
 	m_DummyInput = m_Controls.m_aInputData[!g_Config.m_ClDummy];
 	m_Controls.m_aInputData[g_Config.m_ClDummy].m_Fire = PrevDummyFire;
 	m_IsDummySwapping = 1;
+
+	m_Camera.OnDummySwap();
 }
 
 int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)

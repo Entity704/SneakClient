@@ -31,6 +31,7 @@ CCamera::CCamera()
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecLastPos = vec2(0, 0);
 	m_ScHiddenSpecHasPos = false;
+	m_ScHiddenSpecViewPos = vec2(0, 0);
 	m_GotoSwitchOffset = 0;
 	m_GotoTeleOffset = 0;
 	m_GotoSwitchLastPos = ivec2(-1, -1);
@@ -408,6 +409,9 @@ void CCamera::OnRender()
 	if(m_CameraSmoothing)
 		m_Center = m_CameraSmoothingCenter;
 
+	if(m_ScHiddenSpecActive && !GameClient()->m_Snap.m_SpecInfo.m_UsePosition)
+		m_ScHiddenSpecViewPos = m_Center;
+
 	m_PrevCenter = m_Center;
 	m_PrevSpecId = SpecId;
 
@@ -541,6 +545,7 @@ bool CCamera::ToggleHiddenSpec()
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecHasPos = false;
 	m_ScHiddenSpecLastPos = m_Center;
+	m_ScHiddenSpecViewPos = m_Center;
 	GameClient()->m_MultiViewActivated = false;
 	return true;
 }
@@ -551,11 +556,31 @@ void CCamera::ResetHiddenSpec()
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecHasPos = false;
 	m_ScHiddenSpecLastPos = vec2(0, 0);
+	m_ScHiddenSpecViewPos = vec2(0, 0);
 
 	CGameClient::CSnapState &Snap = GameClient()->m_Snap;
 	Snap.m_SpecInfo.m_Active = false;
 	Snap.m_SpecInfo.m_SpectatorId = SPEC_FREEVIEW;
 	Snap.m_SpecInfo.m_UsePosition = false;
+}
+
+void CCamera::OnDummySwap()
+{
+	if(!m_ScHiddenSpecActive)
+		return;
+
+	if(m_ScHiddenSpecTarget != SPEC_FREEVIEW && m_ScHiddenSpecHasPos)
+		return;
+
+	m_ScHiddenSpecViewPos = m_Center;
+	GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy] = m_ScHiddenSpecViewPos;
+	GameClient()->m_Controls.m_aMouseInputType[g_Config.m_ClDummy] = CControls::EMouseInputType::AUTOMATED;
+	CGameClient::CSnapState &Snap = GameClient()->m_Snap;
+	Snap.m_SpecInfo.m_Active = true;
+	Snap.m_SpecInfo.m_SpectatorId = SPEC_FREEVIEW;
+	Snap.m_SpecInfo.m_UsePosition = false;
+	GameClient()->m_Controls.ClampMousePos();
+	m_CamType = CAMTYPE_SPEC;
 }
 
 void CCamera::SetHiddenSpecTarget(int ClientId)

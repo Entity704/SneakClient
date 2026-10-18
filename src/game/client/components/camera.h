@@ -115,6 +115,7 @@ public:
 	bool CanUseHiddenSpec() const;
 	bool ToggleHiddenSpec();
 	void UpdateHiddenSpec();
+	void OnDummySwap();
 	void ResetHiddenSpec();
 	void SetHiddenSpecTarget(int ClientId);
 	bool SetHiddenSpecTargetByName(const char *pName);
@@ -137,6 +138,7 @@ private:
 	int m_ScHiddenSpecTarget;
 	vec2 m_ScHiddenSpecLastPos;
 	bool m_ScHiddenSpecHasPos;
+	vec2 m_ScHiddenSpecViewPos;
 	int m_GotoSwitchOffset;
 	int m_GotoTeleOffset;
 	ivec2 m_GotoSwitchLastPos;
