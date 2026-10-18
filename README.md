@@ -1,16 +1,27 @@
 ![SneakClient](data/sclient/logo.png)
 
-[![Build status](https://github.com/Entity704/SneakClient/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Entity704/SneakClient/actions/workflows/build.yml?branch=master)
+# SneakClient
 
+A dedicated client for people with social anxiety
+
+[![Build status](https://github.com/Entity704/SneakClient/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Entity704/SneakClient/actions/workflows/build.yml?branch=master)
 ![WIP](https://img.shields.io/badge/status-WIP-orange)
 
 - [Building Guide](docs/BUILDING.md)
 - [Debugging Guide](docs/DEBUGGING.md)
 - [Contributing Guide](docs/CONTRIBUTING.md)
 
-# SneakClient
+---
 
-A dedicated client for people with social anxiety
+You can hide some actions and status to play ~~sneaky~~
+
+like:
+
+- Hide your typing bubble
+- Hide your hook collision line
+- Hidden spectating
+
+and more ...
 
 ## Dependencies on Linux / macOS
 
