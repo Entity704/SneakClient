@@ -517,6 +517,8 @@ bool CCamera::CanUseHiddenSpec() const
 		return false;
 	if(Client()->State() != IClient::STATE_ONLINE)
 		return false;
+	if(!Client()->ServerCapAnyPlayerFlag())
+		return false;
 
 	const CGameClient *pGameClient = GameClient();
 	const int LocalId = pGameClient->m_Snap.m_LocalClientId;

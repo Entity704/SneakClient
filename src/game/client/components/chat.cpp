@@ -1425,7 +1425,7 @@ void CChat::SendChat(int Team, const char *pLine)
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
 
-	if((Client()->ServerInfo().m_Flags & EXPLAYERFLAG_PAUSED) && g_Config.m_ScHiddenSpec && g_Config.m_ScSneaking && Client()->State() == IClient::STATE_ONLINE)
+	if(g_Config.m_ScHiddenSpec && g_Config.m_ScSneaking && Client()->State() == IClient::STATE_ONLINE)
 	{
 		const char *pTrimmed = str_utf8_skip_whitespaces(pLine);
 		const bool IsPause = str_startswith_nocase(pTrimmed, "/pause") &&
