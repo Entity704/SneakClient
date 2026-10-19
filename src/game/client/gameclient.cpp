@@ -713,7 +713,7 @@ void CGameClient::OnReset()
 	m_MultiViewActivated = false;
 	m_MultiView.m_IsInit = false;
 
-	m_Camera.ResetHiddenSpec();
+	m_Camera.ResetHiddenSpec(false);
 
 	m_CursorInfo.m_CursorOwnerId = -1;
 	m_CursorInfo.m_NumSamples = 0;

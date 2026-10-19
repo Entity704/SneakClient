@@ -29,6 +29,7 @@ CCamera::CCamera()
 	m_ForceFreeview = false;
 	m_ScHiddenSpecActive = false;
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
+	m_ScHiddenSpecSavedTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecLastPos = vec2(0, 0);
 	m_ScHiddenSpecHasPos = false;
 	m_ScHiddenSpecViewPos = vec2(0, 0);
@@ -543,6 +544,8 @@ bool CCamera::ToggleHiddenSpec()
 
 	m_ScHiddenSpecActive = true;
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
+	if(m_ScHiddenSpecSavedTarget >= 0 && m_ScHiddenSpecSavedTarget < MAX_CLIENTS && GameClient()->m_aClients[m_ScHiddenSpecSavedTarget].m_Active)
+		m_ScHiddenSpecTarget = m_ScHiddenSpecSavedTarget;
 	m_ScHiddenSpecHasPos = false;
 	m_ScHiddenSpecLastPos = m_Center;
 	m_ScHiddenSpecViewPos = m_Center;
@@ -550,8 +553,9 @@ bool CCamera::ToggleHiddenSpec()
 	return true;
 }
 
-void CCamera::ResetHiddenSpec()
+void CCamera::ResetHiddenSpec(bool RememberTarget)
 {
+	m_ScHiddenSpecSavedTarget = RememberTarget && m_ScHiddenSpecTarget >= 0 && m_ScHiddenSpecTarget < MAX_CLIENTS ? m_ScHiddenSpecTarget : SPEC_FREEVIEW;
 	m_ScHiddenSpecActive = false;
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecHasPos = false;

@@ -116,7 +116,7 @@ public:
 	bool ToggleHiddenSpec();
 	void UpdateHiddenSpec();
 	void OnDummySwap();
-	void ResetHiddenSpec();
+	void ResetHiddenSpec(bool RememberTarget = true);
 	void SetHiddenSpecTarget(int ClientId);
 	bool SetHiddenSpecTargetByName(const char *pName);
 	void ExtendHiddenSpecShowDistance(float *pX, float *pY) const;
@@ -136,6 +136,7 @@ private:
 	vec2 m_ForceFreeviewPos;
 	bool m_ScHiddenSpecActive;
 	int m_ScHiddenSpecTarget;
+	int m_ScHiddenSpecSavedTarget;
 	vec2 m_ScHiddenSpecLastPos;
 	bool m_ScHiddenSpecHasPos;
 	vec2 m_ScHiddenSpecViewPos;
