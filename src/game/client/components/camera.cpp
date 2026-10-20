@@ -876,6 +876,9 @@ int CCamera::FollowFactor() const
 
 bool CCamera::CanUseAutoSpecCamera() const
 {
+	if(m_ScHiddenSpecActive)
+		return false;
+
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		// only follow mode has the correct camera info
