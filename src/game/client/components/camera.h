@@ -135,6 +135,7 @@ private:
 	bool m_ForceFreeview;
 	vec2 m_ForceFreeviewPos;
 	bool m_ScHiddenSpecActive;
+	float m_ScHiddenSpecZoom;
 	int m_ScHiddenSpecTarget;
 	int m_ScHiddenSpecSavedTarget;
 	vec2 m_ScHiddenSpecLastPos;

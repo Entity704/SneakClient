@@ -28,6 +28,7 @@ CCamera::CCamera()
 	m_Zooming = false;
 	m_ForceFreeview = false;
 	m_ScHiddenSpecActive = false;
+	m_ScHiddenSpecZoom = 1.0f;
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecSavedTarget = SPEC_FREEVIEW;
 	m_ScHiddenSpecLastPos = vec2(0, 0);
@@ -112,7 +113,12 @@ void CCamera::ChangeZoom(float Target, int Smoothness, bool IsUser)
 	m_ZoomSmoothingEnd = Now + (float)Smoothness / 1000;
 
 	if(IsUser)
-		m_UserZoomTarget = Target;
+	{
+		if(m_ScHiddenSpecActive)
+			m_ScHiddenSpecZoom = Target;
+		else
+			m_UserZoomTarget = Target;
+	}
 
 	m_Zooming = true;
 }
@@ -154,19 +160,19 @@ void CCamera::UpdateCamera()
 
 		ZoomChanged = true;
 	}
-	else if((CanUseCameraInfo && !UsingAutoSpecCamera) && CurrentZoom != m_UserZoomTarget)
+	else if((CanUseCameraInfo && !UsingAutoSpecCamera) && CurrentZoom != (m_ScHiddenSpecActive ? m_ScHiddenSpecZoom : m_UserZoomTarget))
 	{
 		// turning off auto spec camera
-		ChangeZoom(m_UserZoomTarget, g_Config.m_ClSmoothZoomTime, false);
+		ChangeZoom(m_ScHiddenSpecActive ? m_ScHiddenSpecZoom : m_UserZoomTarget, g_Config.m_ClSmoothZoomTime, false);
 		m_AutoSpecCameraZooming = false;
 
 		ZoomChanged = true;
 	}
-	else if(!CanUseCameraInfo && CurrentZoom != m_UserZoomTarget)
+	else if(!CanUseCameraInfo && CurrentZoom != (m_ScHiddenSpecActive ? m_ScHiddenSpecZoom : m_UserZoomTarget))
 	{
 		// stop spectating player
 		if(!GameClient()->m_MultiViewActivated)
-			ChangeZoom(m_UserZoomTarget, g_Config.m_ClSmoothZoomTime, false);
+			ChangeZoom(m_ScHiddenSpecActive ? m_ScHiddenSpecZoom : m_UserZoomTarget, g_Config.m_ClSmoothZoomTime, false);
 		m_AutoSpecCameraZooming = false;
 
 		ZoomChanged = true;
@@ -439,6 +445,7 @@ void CCamera::OnReset()
 	m_Zooming = false;
 	m_AutoSpecCameraZooming = false;
 	m_UserZoomTarget = CCamera::ZoomStepsToValue(g_Config.m_ClDefaultZoom - 10);
+	m_ScHiddenSpecZoom = m_UserZoomTarget;
 }
 
 void CCamera::ConZoomPlus(IConsole::IResult *pResult, void *pUserData)
@@ -545,6 +552,7 @@ bool CCamera::ToggleHiddenSpec()
 		return false;
 
 	m_ScHiddenSpecActive = true;
+	m_ScHiddenSpecZoom = m_UserZoomTarget;
 	m_ScHiddenSpecTarget = SPEC_FREEVIEW;
 	if(m_ScHiddenSpecSavedTarget >= 0 && m_ScHiddenSpecSavedTarget < MAX_CLIENTS && GameClient()->m_aClients[m_ScHiddenSpecSavedTarget].m_Active)
 		m_ScHiddenSpecTarget = m_ScHiddenSpecSavedTarget;
