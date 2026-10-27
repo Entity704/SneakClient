@@ -12,6 +12,14 @@ extern const char *GIT_SHORTREV_HASH;
 #endif
 #define GAME_RELEASE_VERSION STRINGIFY(GAME_RELEASE_VERSION_INTERNAL)
 
+// sneakclient
+#define SC_GAME_NAME "SneakClient"
+#ifndef SC_RELEASE_VERSION_INTERNAL
+#define SC_RELEASE_VERSION_INTERNAL 0.1.0
+#endif
+#define SC_RELEASE_VERSION STRINGIFY(SC_RELEASE_VERSION_INTERNAL)
+#define SC_VERSION SC_GAME_NAME " " SC_RELEASE_VERSION
+
 // teeworlds
 #define CLIENT_VERSION7 0x0705
 // For compatibility with DDNet client 15.8 and older we need to include the prefix `0.6` in the version string

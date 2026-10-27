@@ -3290,6 +3290,7 @@ void CClient::Run()
 	m_Fifo.Init(m_pConsole, g_Config.m_ClInputFifo, CFGFLAG_CLIENT);
 
 	m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "client", "version " GAME_RELEASE_VERSION " on " CONF_PLATFORM_STRING " " CONF_ARCH_STRING, ColorRGBA(0.7f, 0.7f, 1.0f, 1.0f));
+	m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "client", "sneakclient version " SC_RELEASE_VERSION, ColorRGBA(0.7f, 0.7f, 1.0f, 1.0f));
 	if(GIT_SHORTREV_HASH)
 	{
 		char aBuf[64];
@@ -5031,6 +5032,7 @@ int main(int argc, const char **argv)
 #endif
 			"\n"
 			"Game version: %s %s %s\n"
+			"SneakClient version: %s\n"
 			"OS version: %s\n\n"
 			"%s", // GPU info
 			pPreamble,
@@ -5038,6 +5040,7 @@ int main(int argc, const char **argv)
 			pPostamble,
 			CONF_PLATFORM_STRING, CONF_ARCH_ENDIAN_STRING,
 			GAME_NAME, GAME_RELEASE_VERSION, GIT_SHORTREV_HASH != nullptr ? GIT_SHORTREV_HASH : "",
+			SC_RELEASE_VERSION,
 			aOsVersionString,
 			aGpuInfo);
 		// Also log all of this information to the assertion log file
