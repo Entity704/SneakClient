@@ -1,0 +1,476 @@
+name: Manual Release
+run-name: Release ${{ inputs.tag_name }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release Notes'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  create-tag:
+    name: Create tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.create-tag.outputs.tag }}
+      tag_safe: ${{ steps.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        ref: ${{ github.sha }}
+
+    - name: Create tag if missing
+      id: create-tag
+      env:
+        TAG: ${{ inputs.tag_name }}
+      run: |
+        set -euo pipefail
+        if [ -z "$TAG" ]; then
+          echo "::error::Release tag must not be empty."
+          exit 1
+        fi
+        if [[ "$TAG" =~ [[:space:]] ]]; then
+          echo "::error::Release tag must not contain whitespace: $TAG"
+          exit 1
+        fi
+
+        # Resolve annotated tags to their commit, fall back to lightweight tags.
+        tagged_commit=$(git ls-remote --tags origin "refs/tags/$TAG^{}" | cut -f1 | head -n1)
+        if [ -z "$tagged_commit" ]; then
+          tagged_commit=$(git ls-remote --tags origin "refs/tags/$TAG" | cut -f1 | head -n1)
+        fi
+
+        if [ -n "$tagged_commit" ]; then
+          if [ "$tagged_commit" != "$GITHUB_SHA" ]; then
+            echo "::error::Tag $TAG already exists at $tagged_commit, but this workflow runs at $GITHUB_SHA. Move the tag or dispatch the workflow from the tagged commit."
+            exit 1
+          fi
+          echo "Tag $TAG already exists at $GITHUB_SHA, reusing it."
+        else
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
+          echo "Created tag $TAG at $GITHUB_SHA."
+        fi
+
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "tag_safe=${TAG//\//-}" >> "$GITHUB_OUTPUT"
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    needs: create-tag
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+      TAG_SAFE: ${{ needs.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        ref: ${{ github.sha }}
+
+    - name: Prepare Linux
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          libavcodec-dev \
+          libavformat-dev \
+          libavutil-dev \
+          libfreetype6-dev \
+          libglew-dev \
+          libnotify-dev \
+          libpng-dev \
+          libsdl2-dev \
+          libsqlite3-dev \
+          libswresample-dev \
+          libswscale-dev \
+          libx264-dev \
+          ninja-build \
+          pkg-config
+
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.2
+      with:
+        version: 1.3.296.0
+        cache: true
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.9.2
+      with:
+        workspaces: |
+          src/mastersrv
+          src/masterping
+          ./
+
+    - name: Build and package
+      run: |
+        cmake -B release -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DIPO=ON \
+          -Werror=dev
+        cmake --build release --config Release --target package_default -j "$(nproc)"
+        mkdir artifacts
+        mv release/DDNet-*-linux_x86_64.tar.xz "artifacts/SneakClient-$TAG_SAFE-linux-x86_64.tar.xz"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: sneakclient-linux
+        path: artifacts
+        if-no-files-found: error
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    needs: create-tag
+    defaults:
+      run:
+        shell: bash
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+      TAG_SAFE: ${{ needs.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        ref: ${{ github.sha }}
+
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.2
+      with:
+        version: 1.3.296.0
+        cache: true
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.9.2
+      with:
+        workspaces: |
+          src/mastersrv
+          src/masterping
+          ./
+
+    - name: Build and package
+      run: |
+        cmake -B release -A x64 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DEXCEPTION_HANDLING=ON \
+          -DVULKAN=ON \
+          -Werror=dev
+        cmake --build release --config Release --target package_default
+        mkdir artifacts
+        mv release/DDNet-*-win64.zip "artifacts/SneakClient-$TAG_SAFE-win64.zip"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: sneakclient-windows
+        path: artifacts
+        if-no-files-found: error
+
+  build-macos:
+    name: Build macOS
+    runs-on: macOS-latest
+    needs: create-tag
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+      TAG_SAFE: ${{ needs.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        ref: ${{ github.sha }}
+
+    - name: Prepare macOS
+      run: |
+        brew update
+        brew install ffmpeg molten-vk ninja pkg-config sdl2
+        brew upgrade freetype
+        pip3 install --break-system-packages dmgbuild pyobjc-framework-Quartz
+        echo /Library/Frameworks/Python.framework/Versions/3.12/bin >> "$GITHUB_PATH"
+        sudo rm -rf /Library/Developer/CommandLineTools
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.9.2
+      with:
+        workspaces: |
+          src/mastersrv
+          src/masterping
+          ./
+
+    - name: Build and package
+      run: |
+        cmake -B release -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DIPO=ON \
+          -Werror=dev
+        cmake --build release --config Release --target package_default
+        mkdir artifacts
+        mv release/DDNet-*-macos.dmg "artifacts/SneakClient-$TAG_SAFE-macos.dmg"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: sneakclient-macos
+        path: artifacts
+        if-no-files-found: error
+
+  build-emscripten:
+    name: Build Web (Emscripten)
+    runs-on: ubuntu-24.04
+    needs: create-tag
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+      TAG_SAFE: ${{ needs.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        ref: ${{ github.sha }}
+
+    - name: Prepare Linux
+      run: |
+        curl -LO https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-Linux-x86_64.tar.gz
+        mkdir -p /home/runner/cmake
+        tar --strip-components 1 -C /home/runner/cmake -xf cmake-3.22.1-Linux-x86_64.tar.gz
+        rustup default 1.89.0
+        rustup target add wasm32-unknown-emscripten
+        git clone https://github.com/emscripten-core/emsdk emsdk
+        cd emsdk || exit 1
+        ./emsdk install 4.0.22
+        ./emsdk activate 4.0.22
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.9.2
+      with:
+        workspaces: |
+          src/mastersrv
+          src/masterping
+          ./
+
+    - name: Build and package
+      run: |
+        export PATH=/home/runner/cmake/bin:$PATH
+        source emsdk/emsdk_env.sh
+        # Unix Makefiles required due to https://gitlab.kitware.com/cmake/cmake/-/issues/16395
+        emcmake cmake -B build-emscripten-release -G "Unix Makefiles" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DVIDEORECORDER=OFF \
+          -DVULKAN=OFF \
+          -DSERVER=OFF \
+          -DTOOLS=OFF \
+          -DPREFER_BUNDLED_LIBS=ON
+        cmake --build build-emscripten-release --target game-client -j "$(nproc)"
+        cmake --build build-emscripten-release --target package_default
+        mkdir artifacts
+        mv build-emscripten-release/DDNet-*-Emscripten.tar.xz "artifacts/SneakClient-$TAG_SAFE-web.tar.xz"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: sneakclient-emscripten
+        path: artifacts
+        if-no-files-found: error
+
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-24.04
+    needs: create-tag
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+      TAG_SAFE: ${{ needs.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        ref: ${{ github.sha }}
+
+    - name: Validate Gradle Wrapper
+      uses: gradle/actions/wrapper-validation@v5
+
+    - name: Prepare Linux
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y ninja-build openjdk-21-jdk openssl
+        curl -LO https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-Linux-x86_64.tar.gz
+        mkdir -p /home/runner/cmake
+        tar --strip-components 1 -C /home/runner/cmake -xf cmake-3.22.1-Linux-x86_64.tar.gz
+        rustup default 1.92.0
+        cargo install cargo-ndk
+        rustup target add armv7-linux-androideabi
+        rustup target add i686-linux-android
+        rustup target add aarch64-linux-android
+        rustup target add x86_64-linux-android
+        scripts/android/download_android_sdk.sh /home/runner
+
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.2
+      with:
+        version: 1.3.296.0
+        cache: true
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.9.2
+      with:
+        workspaces: |
+          src/mastersrv
+          src/masterping
+          ./
+
+    - name: Build Android app
+      env:
+        ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      run: |
+        set -euo pipefail
+        export TW_KEY_NAME="$RUNNER_TEMP/sneakclient-release.keystore"
+        if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$TW_KEY_NAME"
+          : "${ANDROID_KEY_ALIAS:?ANDROID_KEY_ALIAS must be set when ANDROID_KEYSTORE_BASE64 is configured}"
+          : "${ANDROID_KEYSTORE_PASSWORD:?ANDROID_KEYSTORE_PASSWORD must be set when ANDROID_KEYSTORE_BASE64 is configured}"
+          export TW_KEY_ALIAS="$ANDROID_KEY_ALIAS"
+          export TW_KEY_PW="$ANDROID_KEYSTORE_PASSWORD"
+          echo "Using release keystore from repository secrets."
+        else
+          export TW_KEY_ALIAS="SneakClient-Key"
+          TW_KEY_PW="$(openssl rand -base64 32)"
+          export TW_KEY_PW
+          keytool -genkey -v -keystore "$TW_KEY_NAME" -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias "$TW_KEY_ALIAS" -storepass "$TW_KEY_PW" -dname "CN=SneakClient CI, OU=SneakClient, O=SneakClient"
+          echo "::warning::ANDROID_KEYSTORE_BASE64 secret is not configured; the APK is signed with an ephemeral key and cannot be updated in place."
+        fi
+
+        export ANDROID_HOME="/home/runner/Android/Sdk"
+        unset ANDROID_SDK_ROOT
+        export PATH=/home/runner/cmake/bin:$PATH
+        export TW_VERSION_NAME="${TAG_SAFE#v}"
+        export TW_VERSION_CODE="${{ github.run_number }}"
+        scripts/android/cmake_android.sh all DDNet org.ddnet.client Release build-android
+        mkdir artifacts
+        mv build-android/DDNet.apk "artifacts/SneakClient-$TAG_SAFE-android.apk"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: sneakclient-android
+        path: artifacts
+        if-no-files-found: error
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-26
+    needs: create-tag
+    env:
+      CARGO_HTTP_MULTIPLEXING: false
+      TAG_SAFE: ${{ needs.create-tag.outputs.tag_safe }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        ref: ${{ github.sha }}
+
+    - name: Prepare macOS
+      run: |
+        sudo xcode-select -s "/Applications/Xcode_26.2.app/Contents/Developer"
+        xcodebuild -version
+        rustup target add aarch64-apple-ios
+        rustup target add aarch64-apple-ios-sim
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.9.2
+      with:
+        workspaces: ./
+
+    - name: Build iOS device app
+      run: scripts/ios/cmake_ios.sh device DDNet org.ddnet.client Release build-ios-device
+
+    - name: Package
+      run: |
+        mkdir artifacts
+        mkdir Payload
+        mv build-ios-device/Release-iphoneos/DDNet.app Payload
+        zip -qry "artifacts/SneakClient-$TAG_SAFE-ios.ipa" Payload
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: sneakclient-ios
+        path: artifacts
+        if-no-files-found: error
+
+  publish:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs:
+      - create-tag
+      - build-linux
+      - build-windows
+      - build-macos
+      - build-emscripten
+      - build-android
+      - build-ios
+    permissions:
+      contents: write
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v8
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: Create or update GitHub release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TAG: ${{ needs.create-tag.outputs.tag }}
+        RELEASE_NOTES: ${{ inputs.release_notes }}
+      run: |
+        set -euo pipefail
+        printf '%s\n' "$RELEASE_NOTES" > release-notes.md
+
+        shopt -s nullglob
+        assets=(artifacts/*)
+        if [ ${#assets[@]} -eq 0 ]; then
+          echo "::error::No release assets were downloaded."
+          exit 1
+        fi
+        printf 'Release assets:\n'
+        printf '  %s\n' "${assets[@]}"
+
+        if gh release view "$TAG" >/dev/null 2>&1; then
+          gh release edit "$TAG" --title "SneakClient $TAG" --notes-file release-notes.md
+          gh release upload "$TAG" "${assets[@]}" --clobber
+        else
+          gh release create "$TAG" "${assets[@]}" --verify-tag --title "SneakClient $TAG" --notes-file release-notes.md
+        fi
+
+    - name: Summarize release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TAG: ${{ needs.create-tag.outputs.tag }}
+      run: |
+        set -euo pipefail
+        url=$(gh release view "$TAG" --json url --jq .url)
+        echo "### Released [$TAG]($url)" >> "$GITHUB_STEP_SUMMARY"
