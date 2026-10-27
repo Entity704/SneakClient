@@ -5,7 +5,8 @@
 A dedicated client for people with social anxiety
 
 [![Build status](https://github.com/Entity704/SneakClient/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Entity704/SneakClient/actions/workflows/build.yml?branch=master)
-![WIP](https://img.shields.io/badge/status-WIP-orange)
+[![Release](https://img.shields.io/github/v/release/Entity704/SneakClient?logo=github&label=Release&color=blue)](https://github.com/Entity704/SneakClient/releases/latest) \
+![WIP](https://img.shields.io/badge/Status-WIP-orange)
 
 - [Building Guide](docs/BUILDING.md)
 - [Debugging Guide](docs/DEBUGGING.md)
